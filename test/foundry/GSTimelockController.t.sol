@@ -177,6 +177,29 @@ contract GSTimelockControllerTest is Test {
         vm.expectRevert("TimelockController: caller must be timelock");
         timelock.removeEmergencyCall(address(testContract), "emergencyFunction()");
 
+        timelock.grantRole(timelock.EMERGENCY_ROLE(), user2);
+
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+
+        assertFalse(testContract.isEmergencyCalled());
+
+        timelock.executeEmergency(address(testContract), 0, "emergencyFunction()", "");
+
+        assertTrue(testContract.isEmergencyCalled());
+
+        testContract.resetEmergencyFunction();
+
+        assertFalse(testContract.isEmergencyCalled());
+
+        timelock.renounceRole(timelock.EMERGENCY_ROLE(), user2);
+
+        vm.expectRevert("AccessControl: account 0x2b5ad5c4795c026514f8317c7a215e218dccd6cf is missing role 0xbf233dd2aafeb4d50879c4aa5c81e96d92f6e6945c906a58f9f2d1c1631b4b26");
+        timelock.executeEmergency(address(testContract), 0, "emergencyFunction()", "");
+
+        assertFalse(testContract.isEmergencyCalled());
+
         vm.stopPrank();
 
         vm.startPrank(user1);
